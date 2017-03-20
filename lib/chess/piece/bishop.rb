@@ -25,4 +25,8 @@ class Bishop < Piece
       end   
     end
   end
+
+  def self.move_pattern #STUB
+    Proc.new { [] }
+  end
 end

@@ -37,6 +37,24 @@ class Board < Array
     self[0x77].piece = Rook.new(:black)
   end
 
+  def clone
+    clone_board = Board.new
+    self.each_index { |pos|
+      clone_board[pos].piece = self[pos].piece if Position::valid?(pos)
+    }
+    return clone_board
+  end
+
+  def move_piece(move)
+    from = move[0]
+    to = move[1]
+
+    self[to].piece = self[from].piece
+    self[from].piece = nil
+
+    self[to].piece.move
+  end
+
   def king_position(side)
     self.find_index.with_index do |tile, pos| 
        if Position::valid?(pos) && tile.occupied?
@@ -74,5 +92,19 @@ class Board < Array
 
   def attacked_positions_by(pos, &attack_pattern)
     yield(self, pos)
+  end
+
+  def piece_move_generator
+    Proc.new do |game, pos|
+      self[pos].piece.class.move_pattern.call(game, pos)
+    end
+  end
+
+  def move_generator(side)
+    Proc.new do |game|
+      piece_positions(side).reduce([]) do |acc, pos|
+        acc + piece_move_generator.call(game,pos)
+      end
+    end
   end
 end

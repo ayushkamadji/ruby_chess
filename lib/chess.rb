@@ -1,3 +1,4 @@
+$LOAD_PATH.unshift File.expand_path('../../lib', __FILE__)
 require 'chess/game'
 
 def display_board(board)
@@ -29,7 +30,7 @@ def print_tile(tile)
     when :rook then chara = 'r'
     end
   else
-    chara = '.'
+    chara = '-'
   end
 
   if tile.piece != nil
