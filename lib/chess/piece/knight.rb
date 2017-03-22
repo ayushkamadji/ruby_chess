@@ -27,7 +27,20 @@ class Knight < Piece
     end
   end
 
-  def self.move_pattern #STUB
-    Proc.new { [] }
+  def self.move_pattern
+    Proc.new do |game, pos|
+      board = game.board
+      opponent = board[pos].piece.opponent
+
+      OFFSETS.reduce([]) do |acc, offset|
+        if (Position::valid?(pos + offset) &&
+            (!board[pos + offset].occupied? ||
+             board[pos + offset].piece.side == opponent))
+          acc << [pos, pos + offset]
+        else
+          acc
+        end
+      end
+    end
   end
 end

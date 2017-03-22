@@ -84,14 +84,12 @@ class Board < Array
 
   def attacked_positions(side)
     piece_positions(side).reduce([]) do |acc, pos|
-      (acc + 
-       attacked_positions_by(pos, &(self[pos].piece.class::attack_pattern))
-      ).uniq
+      (acc + attacked_positions_by(pos)).uniq
     end
   end
 
-  def attacked_positions_by(pos, &attack_pattern)
-    yield(self, pos)
+  def attacked_positions_by(pos)#, &attack_pattern)
+    self[pos].piece.class::attack_pattern.call(self,pos)
   end
 
   def piece_move_generator
@@ -106,5 +104,11 @@ class Board < Array
         acc + piece_move_generator.call(game,pos)
       end
     end
+  end
+
+  def is_pawn_double_advance?(move)
+    from = move[0]
+    to = move[1]
+    self[to].piece.is_a?(Pawn) && (to - from).abs == 2 * Position::RANK_WIDTH
   end
 end
