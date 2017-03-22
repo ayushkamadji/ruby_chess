@@ -39,9 +39,18 @@ class Board < Array
 
   def clone
     clone_board = Board.new
-    self.each_index { |pos|
-      clone_board[pos].piece = self[pos].piece if Position::valid?(pos)
-    }
+    self.each_index do |pos|
+      if Position::valid?(pos)
+        if self[pos].piece != nil
+          piece = Piece::generate_new(
+                    self[pos].piece.type, 
+                    self[pos].piece.side)
+        else
+          piece = nil
+        end
+      clone_board[pos].piece = piece
+      end
+    end
     return clone_board
   end
 
@@ -53,6 +62,29 @@ class Board < Array
     self[from].piece = nil
 
     self[to].piece.move
+  end
+
+  def remove_piece(pos)
+    self[pos].piece = nil
+  end
+
+  def place_piece(pos, type, side)
+    self[pos].piece = Piece::generate_new(type, side)
+  end
+
+  def castle_rook(move)
+    from = move[0]
+    to = move[1]
+
+    case Position::file(to)
+    when 6 
+      rook_from_position = Position::rank(from) + 7
+      rook_to_position = Position::rank(from) + 5
+    when 2
+      rook_from_position = Position::rank(from)
+      rook_to_position = Position::rank(from) + 3
+    end
+    move_piece([rook_from_position, rook_to_position])
   end
 
   def king_position(side)
@@ -88,7 +120,7 @@ class Board < Array
     end
   end
 
-  def attacked_positions_by(pos)#, &attack_pattern)
+  def attacked_positions_by(pos)
     self[pos].piece.class::attack_pattern.call(self,pos)
   end
 
@@ -104,11 +136,5 @@ class Board < Array
         acc + piece_move_generator.call(game,pos)
       end
     end
-  end
-
-  def is_pawn_double_advance?(move)
-    from = move[0]
-    to = move[1]
-    self[to].piece.is_a?(Pawn) && (to - from).abs == 2 * Position::RANK_WIDTH
   end
 end

@@ -50,3 +50,54 @@ def disp_atk_map(board, side)
    end
    print "\n"
  end
+
+def start_game
+  game = Game.new
+  until game.over?
+    move = [nil, nil]
+    until game.legal_moves.include?(move)
+      display_board(game.board)
+      disp_atk_map(game.board, game.opposing_side)
+      print "Check!\n" if game.playing_side_in_check?
+      print "#{game.playing_side} to move\n"
+      move = parse_move(gets.strip)
+      if !game.legal_moves.include?(move)
+        print "Try again"
+        gets
+      end
+    end
+
+    if Move::needs_promotion?(move, game.board)
+      print "promote to?\n"
+      promotion_piece_type = parse_type(gets.strip)
+    end
+
+    game.play(move)
+  end
+
+  display_board(game.board)
+  if game.checkmate?
+    print "Checkmate\n"
+    print "#{game.opposing_side} wins"
+  end
+  if game.stalemate?
+    print "Stalemate\n"
+  end
+  gets
+end
+
+def parse_move(string)
+  tile_names = string.split(' ')
+  tile_names.map do |name|
+   Position::name_to_pos(name)
+  end
+end
+
+def parse_type(string)
+  case string
+  when "knight" then return :knight
+  when "bishop" then return :bishop
+  when "rook" then return :rook
+  when "queen" then return :queen
+  end
+end

@@ -65,4 +65,8 @@ class Pawn < Piece
   def self.capture_offsets(side)
     [advance_offset(side) + 1, advance_offset(side) - 1]
   end
+
+  def self.ep_capture_position_offset(side)
+    -1 * advance_offset(side)
+  end
 end

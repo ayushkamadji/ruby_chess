@@ -1,4 +1,5 @@
 require 'chess/board'
+require 'chess/move'
 
 class Game
   attr_reader :playing_side, :board, :ep_position
@@ -13,8 +14,56 @@ class Game
     @playing_side == :white ? :black : :white
   end
 
+  def play(move, promotion_piece_type=nil)
+    to_pos = move[1]
+    deploy(move)
+    promote(to_pos, promotion_piece_type) if promotion_piece_type != nil
+    update_ep_position(move)
+    end_turn
+  end
+
+  def deploy(move)
+    board.move_piece(move)
+
+    if Move::is_ep_capture?(move, self)
+      board.remove_piece(@ep_position + Pawn::ep_capture_position_offset(@playing_side))
+    end
+
+    if Move::is_castling?(move, board)
+      board.castle_rook(move)
+    end
+  end
+
+  def promote(pos, promotion_piece_type)
+    board.place_piece(pos, promotion_piece_type, playing_side)
+  end
+
+  def update_ep_position(move)
+    if Move::is_pawn_double_advance?(move, board)
+      @ep_position = (move[0] + move[1]) / 2
+    else
+      @ep_position = nil
+    end
+  end
+
+  def end_turn
+    @playing_side = opposing_side
+  end
+
   def playing_side_in_check?
     board.attack_map(opposing_side)[board.king_position(playing_side)]
+  end
+
+  def checkmate?
+    playing_side_in_check? && legal_moves == []
+  end
+  
+  def stalemate?
+    !playing_side_in_check? && legal_moves == []
+  end
+  
+  def over?
+    checkmate? || stalemate?
   end
 
   def legal_moves
@@ -40,6 +89,11 @@ class Game
 
   def may_castle?(castle_side, player_side)
     king_position = board.king_position(player_side)
+    the_king = board[king_position].piece
+    return false if the_king.has_moved
+
+    opponent = the_king.opponent
+
     case castle_side
     when :king_side
       rook_position = king_position + 3
@@ -56,35 +110,12 @@ class Game
                     king_position - 1,
                     king_position - 2]
     end
-    
-    the_king = board[king_position].piece
+
     the_rook = board[rook_position].piece
-    opponent = the_king.opponent
 
     the_rook.is_a?(Rook) &&
-    !the_king.has_moved &&
     !the_rook.has_moved &&
     castling_range.all? { |pos| !board[pos].occupied? } &&
     kings_path.all? { |pos| !board.attack_map(opponent)[pos] }
-  end
-
-  def update_ep_position(move)
-    if board.is_pawn_double_advance?(move)
-      @ep_position = (from + to) / 2
-    else
-      @ep_position = nil
-    end
-  end
-
-  def end_turn
-    @playing_side = opposing_side
-  end
-
-  def checkmate?
-    playing_side_in_check? && legal_moves == []
-  end
-  
-  def stalemate?
-    !playing_side_in_check && legal_moves == []
   end
 end
